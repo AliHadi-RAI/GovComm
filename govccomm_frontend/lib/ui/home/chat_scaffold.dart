@@ -512,31 +512,54 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
   }
 @override
   Widget build(BuildContext context) {
+    // Define our core colors to maintain consistency
+    final Color darkBlue = Colors.blue.shade900;
+    final Color lightBlue = Colors.blue.shade100;
+
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        backgroundColor: darkBlue, // All blue top bar
+        foregroundColor: Colors.white, // Everything inside is white
+        elevation: 1,
+        title: Row(
           children: [
-            Text(widget.targetUser.username),
-            Text(
-              _partnerStatus.toUpperCase(),
-              style: TextStyle(
-                fontSize: 11, 
-                color: _partnerStatus == 'online' ? Colors.green : Colors.grey[400],
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2
+            // Picture Logo (Profile Avatar)
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.white24,
+              child: Text(
+                widget.targetUser.username.isNotEmpty 
+                    ? widget.targetUser.username.substring(0, 1).toUpperCase() 
+                    : "?",
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.targetUser.username,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  _partnerStatus.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 11, 
+                    color: _partnerStatus == 'online' ? Colors.greenAccent : Colors.white70,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        elevation: 1,
-        backgroundColor: const Color(0xFF111111),
-        foregroundColor: Colors.white,
       ),
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          if (_isHandshaking) const LinearProgressIndicator(color: Colors.black),
+          if (_isHandshaking) LinearProgressIndicator(color: darkBlue),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -581,17 +604,21 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                       maxWidth: MediaQuery.of(context).size.width * 0.75, 
                     ),
                     decoration: BoxDecoration(
-                      color: isMe ? const Color(0xFF111111) : const Color(0xFFF4F4F5), 
+                      // Sending text in light blue box, Receiving in dark blue box
+                      color: isMe ? lightBlue : darkBlue, 
                       borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(12),
-                        topRight: const Radius.circular(12),
-                        bottomLeft: Radius.circular(isMe ? 12 : 2),
-                        bottomRight: Radius.circular(isMe ? 2 : 12),
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: Radius.circular(isMe ? 16 : 4),
+                        bottomRight: Radius.circular(isMe ? 4 : 16),
                       ),
-                      border: Border.all(
-                        color: isMe ? Colors.transparent : const Color(0xFFE4E4E7),
-                        width: 1,
-                      )
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                      ]
                     ),
                     child: Column(
                       crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -603,7 +630,7 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                             children: [
                               Icon(
                                 Icons.insert_drive_file, 
-                                color: isMe ? Colors.white70 : Colors.black54,
+                                color: isMe ? Colors.black87 : Colors.white70,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
@@ -611,15 +638,16 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                                 child: Text(
                                   displayFileName,
                                   style: TextStyle(
-                                    color: isMe ? Colors.white : Colors.black87,
-                                    fontWeight: FontWeight.w500,
+                                    // Sending: black text, Receiving: white text
+                                    color: isMe ? Colors.black87 : Colors.white,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               if (!isMe && fileData != null && fileData['attachment_id'] != null)
                                 IconButton(
-                                  icon: const Icon(Icons.download, color: Colors.black87),
+                                  icon: const Icon(Icons.download, color: Colors.white),
                                   onPressed: () => _downloadFile(fileData!),
                                   constraints: const BoxConstraints(),
                                   padding: const EdgeInsets.only(left: 8),
@@ -633,14 +661,21 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                               IconButton(
                                 icon: Icon(
                                   _currentlyPlayingId == msg.id ? Icons.pause : Icons.play_arrow,
-                                  color: isMe ? Colors.white : Colors.black87,
+                                  color: isMe ? Colors.black87 : Colors.white,
                                 ),
                                 onPressed: () => _playVoiceNote(msg.id, fileData),
                                 constraints: const BoxConstraints(),
                                 padding: EdgeInsets.zero,
                               ),
                               const SizedBox(width: 8),
-                              const Text("Voice Note", style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic)),
+                              Text(
+                                "Voice Note", 
+                                style: TextStyle(
+                                  fontSize: 14, 
+                                  fontStyle: FontStyle.italic,
+                                  color: isMe ? Colors.black87 : Colors.white,
+                                )
+                              ),
                               const SizedBox(width: 20),
                             ],
                           )
@@ -648,19 +683,21 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                           Text(
                             msg.ciphertext, 
                             style: TextStyle(
-                              color: isMe ? Colors.white : Colors.black87,
+                              // Sending: black text, Receiving: white text
+                              color: isMe ? Colors.black87 : Colors.white,
                               fontSize: 15,
                               height: 1.3,
                             ),
                           ),
 
+                        const SizedBox(height: 4),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               timeString,
                               style: TextStyle(
-                                color: isMe ? Colors.white60 : Colors.black45,
+                                color: isMe ? Colors.black54 : Colors.white60,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -670,7 +707,8 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                               Icon(
                                 msg.isRead ? Icons.done_all : (msg.isDelivered ? Icons.done_all : Icons.done),
                                 size: 14,
-                                color: msg.isRead ? Colors.blueAccent : Colors.white60,
+                                // Blue ticks turned into Green ticks
+                                color: msg.isRead ? Colors.green : Colors.black45,
                               ),
                             ],
                           ],
@@ -684,34 +722,43 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
           ),
           const Divider(height: 1, color: Color(0xFFE4E4E7)),
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.attach_file, color: Colors.black54),
+                  icon: Icon(Icons.attach_file, color: darkBlue), // Blue attachment icon
                   onPressed: () => _pickAndSendFile(widget.targetUser.id),
                 ),
                 Expanded(
-                  child: TextField(
-                    controller: _messageController, 
-                    style: const TextStyle(fontSize: 15),
-                    decoration: const InputDecoration(
-                      hintText: "Secure message...",
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Container(
+                    // Visible box surrounding the message input box
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: darkBlue, width: 1.5), // Blue border
+                      borderRadius: BorderRadius.circular(24), // Rounded edges
                     ),
-                    onSubmitted: (_) => _sendMessage(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      controller: _messageController, 
+                      style: const TextStyle(fontSize: 15),
+                      decoration: const InputDecoration(
+                        hintText: "Secure message...",
+                        border: InputBorder.none,
+                      ),
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
                   )
                 ),
                 IconButton(
                   icon: Icon(
                     _isRecording ? Icons.stop : Icons.mic, 
-                    color: _isRecording ? Colors.red : Colors.black54
+                    // Voice note option blue (unless recording, then red)
+                    color: _isRecording ? Colors.red : darkBlue
                   ),
                   onPressed: _toggleRecording,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send, color: Colors.black), 
+                  icon: Icon(Icons.send, color: darkBlue), // Sending option blue
                   onPressed: _sendMessage
                 ),
               ],

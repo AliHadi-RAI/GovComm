@@ -226,33 +226,29 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     }
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
+    // Reusing the dark blue color
+    final Color darkBlue = Colors.blue.shade900;
+
     return Scaffold(
+      backgroundColor: Colors.white,
+      
+      // --- EXPANDED BLUE TOP BAR ---
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Text("GovComm Chats"),
-            const SizedBox(width: 8),
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _isOnline ? Colors.green : Colors.red,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _showSettingsDialog,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
+        toolbarHeight: 80.0, 
+        backgroundColor: darkBlue, 
+        elevation: 0, 
+        centerTitle: true, 
+        
+        // Dropdown Menu on the far left
+        leading: PopupMenuButton<String>(
+          icon: const Icon(Icons.menu, color: Colors.white, size: 32),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onSelected: (value) {
+            if (value == 'search') _showSearchDialog();
+            if (value == 'settings') _showSettingsDialog();
+            if (value == 'logout') {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -271,131 +267,214 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                   ],
                 ),
               );
-            },
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'search',
+              child: Row(children: [Icon(Icons.search, color: Colors.black54), SizedBox(width: 12), Text('Search')]),
+            ),
+            const PopupMenuItem(
+              value: 'settings',
+              child: Row(children: [Icon(Icons.settings, color: Colors.black54), SizedBox(width: 12), Text('Settings')]),
+            ),
+            const PopupMenuItem(
+              value: 'logout',
+              child: Row(children: [Icon(Icons.logout, color: Colors.red), SizedBox(width: 12), Text('Logout', style: TextStyle(color: Colors.red))]),
+            ),
+          ],
+        ),
+        
+        // Centered Logo and App Name
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: Image.asset(
+                'assets/logo.jpeg',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Icon(Icons.security, color: Colors.white, size: 36),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'govcomm',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 32, 
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(width: 10),
+            // Online status indicator
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _isOnline ? Colors.greenAccent : Colors.redAccent,
+              ),
+            ),
+          ],
+        ),
+      ),
+      
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // --- RECENT CHATS HEADER ---
+          // Top separation line
+          const Divider(height: 1, thickness: 1, color: Colors.black12),
+          
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+            child: Text(
+              "RECENT CHATS",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey.shade500,
+                letterSpacing: 1.5, // Keeps the avant-garde spacing aesthetic
+              ),
+            ),
+          ),
+          
+          // Bottom separation line
+          const Divider(height: 1, thickness: 1, color: Colors.black12),
+
+          // --- CONVERSATIONS LIST SECTION ---
+          Expanded(
+            child: _conversations.isEmpty
+                ? const Center(child: Text("No active chats. Open menu to search."))
+                // Changed to ListView.separated to automatically add lines between chats
+                : ListView.separated(
+                    itemCount: _conversations.length,
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 1, 
+                      thickness: 1, 
+                      color: Colors.black12,
+                      indent: 72, // Optional: Indents the line so it aligns with the text, not the avatar. Remove if you want full-width lines.
+                    ),
+                    itemBuilder: (context, index) {
+                      final conv = _conversations[index];
+                      final partnerId = conv['partnerId']; 
+                      final String displayUsername = conv['partnerUsername'] ?? "User $partnerId";
+                      
+                      return Dismissible(
+                        key: Key(partnerId.toString()),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        confirmDismiss: (direction) async {
+                          return await showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Delete Chat"),
+                              content: Text("Are you sure you want to delete the chat with $displayUsername? all history will be erased."),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                  child: const Text("Delete"),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        onDismissed: (direction) async {
+                          await _dbService.deleteConversation(_myUserId!, partnerId.toString());
+                          await _refreshList();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Chat with $displayUsername deleted")),
+                            );
+                          }
+                        },
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0), // Adds a bit of breathing room to the list item
+                          leading: Stack(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.blueAccent,
+                                child: Text(
+                                  displayUsername.isNotEmpty ? displayUsername.substring(0, 1).toUpperCase() : "?",
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ), 
+                              ),
+                              if (_userStatuses[partnerId.toString()] == 'online')
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          title: Text(
+                            displayUsername, 
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ), 
+                          subtitle: Text(
+                            conv['content'], 
+                            maxLines: 1, 
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                            trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                conv['timestamp'].toString().length > 16 
+                                  ? conv['timestamp'].toString().substring(11, 16) 
+                                  : "",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: (conv['unreadCount'] ?? 0) > 0 ? darkBlue : Colors.grey,
+                                  fontWeight: (conv['unreadCount'] ?? 0) > 0 ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                              if ((conv['unreadCount'] ?? 0) > 0)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: darkBlue,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    "${conv['unreadCount']}",
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          onTap: () => _openChat(User(
+                            id: partnerId.toString(), 
+                            username: displayUsername, 
+                            email: ""
+                          )),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
-      ),
-      body: _conversations.isEmpty
-          ? const Center(child: Text("No active chats. Tap search button below."))
-          : ListView.builder(
-              itemCount: _conversations.length,
-              itemBuilder: (context, index) {
-                final conv = _conversations[index];
-                final partnerId = conv['partnerId']; 
-                final String displayUsername = conv['partnerUsername'] ?? "User $partnerId";
-                
-                return Dismissible(
-                  key: Key(partnerId.toString()),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    color: Colors.red,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  confirmDismiss: (direction) async {
-                    return await showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text("Delete Chat"),
-                        content: Text("Are you sure you want to delete the chat with $displayUsername? all history will be erased."),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            style: TextButton.styleFrom(foregroundColor: Colors.red),
-                            child: const Text("Delete"),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  onDismissed: (direction) async {
-                    await _dbService.deleteConversation(_myUserId!, partnerId.toString());
-                    await _refreshList();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Chat with $displayUsername deleted")),
-                      );
-                    }
-                  },
-                  child: ListTile(
-                    leading: Stack(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.blueAccent,
-                          child: Text(
-                            displayUsername.isNotEmpty ? displayUsername.substring(0, 1).toUpperCase() : "?",
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          ), 
-                        ),
-                        if (_userStatuses[partnerId.toString()] == 'online')
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    title: Text(
-                      displayUsername, 
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ), 
-                    subtitle: Text(
-                      conv['content'], 
-                      maxLines: 1, 
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                      trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          conv['timestamp'].toString().length > 16 
-                            ? conv['timestamp'].toString().substring(11, 16) 
-                            : "",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: (conv['unreadCount'] ?? 0) > 0 ? Colors.blue : Colors.grey,
-                            fontWeight: (conv['unreadCount'] ?? 0) > 0 ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                        if ((conv['unreadCount'] ?? 0) > 0)
-                          Container(
-                            margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              "${conv['unreadCount']}",
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                      ],
-                    ),
-                    onTap: () => _openChat(User(
-                      id: partnerId.toString(), 
-                      username: displayUsername, 
-                      email: ""
-                    )),
-                  ),
-                );
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showSearchDialog(),
-        child: const Icon(Icons.search),
       ),
     );
   }

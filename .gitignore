@@ -3,6 +3,30 @@ node_modules/
 venv/
 __pycache__/
 dist/
-build/
 .vscode/
 .idea/
+
+# Android / iOS build
+android/.gradle/
+ios/Pods/
+
+# Large files
+*.zip
+*.pdf
+*.jpg
+*.png
+
+# Flutter
+.build/
+.dart_tool/
+.packages
+pubspec.lock
+
+# Windows
+AppData/
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
