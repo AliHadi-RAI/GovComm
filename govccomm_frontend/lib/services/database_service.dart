@@ -41,7 +41,6 @@ class DatabaseService {
         if (oldVersion < 5) {
           try {
              await db.execute("ALTER TABLE messages ADD COLUMN isDelivered INTEGER DEFAULT 0");
-             // ensure isRead exists if upgrading from older than 4
              if (oldVersion < 4) {
                await db.execute("ALTER TABLE messages ADD COLUMN isRead INTEGER DEFAULT 1");
              }

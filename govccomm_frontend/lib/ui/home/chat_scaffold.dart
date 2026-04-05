@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:dio/dio.dart'; 
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../crypto/signal_service.dart';
 import '../../crypto/file_crypto_service.dart';
@@ -488,7 +489,25 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
 
       Directory dir;
       if (Platform.isAndroid) {
-        dir = Directory('/storage/emulated/0/Download');
+        var status = await Permission.storage.status;
+        if (!status.isGranted) {
+          status = await Permission.storage.request();
+        }
+
+        if (!status.isGranted) {
+          var manageStatus = await Permission.manageExternalStorage.status;
+          if (!manageStatus.isGranted) {
+            manageStatus = await Permission.manageExternalStorage.request();
+          }
+          
+          if (manageStatus.isGranted) {
+            dir = Directory('/storage/emulated/0/Download');
+          } else {
+            throw Exception('User denied storage permission.');
+          }
+        } else {
+          dir = Directory('/storage/emulated/0/Download');
+        }
       } else {
         dir = await getApplicationDocumentsDirectory();
       }
@@ -512,18 +531,16 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
   }
 @override
   Widget build(BuildContext context) {
-    // Define our core colors to maintain consistency
     final Color darkBlue = Colors.blue.shade900;
     final Color lightBlue = Colors.blue.shade100;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: darkBlue, // All blue top bar
-        foregroundColor: Colors.white, // Everything inside is white
+        backgroundColor: darkBlue, 
+        foregroundColor: Colors.white, 
         elevation: 1,
         title: Row(
           children: [
-            // Picture Logo (Profile Avatar)
             CircleAvatar(
               radius: 18,
               backgroundColor: Colors.white24,
@@ -604,7 +621,6 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                       maxWidth: MediaQuery.of(context).size.width * 0.75, 
                     ),
                     decoration: BoxDecoration(
-                      // Sending text in light blue box, Receiving in dark blue box
                       color: isMe ? lightBlue : darkBlue, 
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
@@ -638,7 +654,6 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                                 child: Text(
                                   displayFileName,
                                   style: TextStyle(
-                                    // Sending: black text, Receiving: white text
                                     color: isMe ? Colors.black87 : Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -683,7 +698,6 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                           Text(
                             msg.ciphertext, 
                             style: TextStyle(
-                              // Sending: black text, Receiving: white text
                               color: isMe ? Colors.black87 : Colors.white,
                               fontSize: 15,
                               height: 1.3,
@@ -707,7 +721,6 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                               Icon(
                                 msg.isRead ? Icons.done_all : (msg.isDelivered ? Icons.done_all : Icons.done),
                                 size: 14,
-                                // Blue ticks turned into Green ticks
                                 color: msg.isRead ? Colors.green : Colors.black45,
                               ),
                             ],
@@ -726,16 +739,15 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
             child: Row(
               children: [
                 IconButton(
-                  icon: Icon(Icons.attach_file, color: darkBlue), // Blue attachment icon
+                  icon: Icon(Icons.attach_file, color: darkBlue), 
                   onPressed: () => _pickAndSendFile(widget.targetUser.id),
                 ),
                 Expanded(
                   child: Container(
-                    // Visible box surrounding the message input box
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      border: Border.all(color: darkBlue, width: 1.5), // Blue border
-                      borderRadius: BorderRadius.circular(24), // Rounded edges
+                      border: Border.all(color: darkBlue, width: 1.5), 
+                      borderRadius: BorderRadius.circular(24), 
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: TextField(
@@ -752,13 +764,12 @@ Future<void> _downloadFile(Map<String, dynamic> fileData) async {
                 IconButton(
                   icon: Icon(
                     _isRecording ? Icons.stop : Icons.mic, 
-                    // Voice note option blue (unless recording, then red)
                     color: _isRecording ? Colors.red : darkBlue
                   ),
                   onPressed: _toggleRecording,
                 ),
                 IconButton(
-                  icon: Icon(Icons.send, color: darkBlue), // Sending option blue
+                  icon: Icon(Icons.send, color: darkBlue),
                   onPressed: _sendMessage
                 ),
               ],

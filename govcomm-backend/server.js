@@ -78,7 +78,6 @@ if (!JWT_SECRET) {
 
 app.use(express.json());
 
-// Request Logger
 app.use((req, res, next) => {
     console.log(`[HTTP] ${req.method} ${req.url}`);
     next();
@@ -154,8 +153,7 @@ io.use((socket, next) => {
     });
 });
 
-// --- Presence Tracking ---
-const onlineUsers = new Map(); // userId -> Set(socketIds)
+const onlineUsers = new Map(); 
 
 function isUserOnline(userId) {
     const sockets = onlineUsers.get(parseInt(userId));
@@ -176,8 +174,6 @@ async function getUserPrivacy(userId) {
 
 async function broadcastStatusChange(userId, status) {
     const privacy = await getUserPrivacy(userId);
-    // If they want to hide their status, we only broadcast "offline" or nothing?
-    // Standard behavior: if show_online is false, they always appear offline to others.
     const effectiveStatus = privacy.show_online ? status : 'offline';
 
     io.emit('userStatus', {
@@ -193,19 +189,16 @@ io.on('connection', async (socket) => {
     const userRoom = String(userId);
     socket.join(userRoom);
 
-    // Track online state
     if (!onlineUsers.has(userId)) {
         onlineUsers.set(userId, new Set());
     }
     onlineUsers.get(userId).add(socket.id);
 
-    // If it's the first socket for this user, broadcast Online
     if (onlineUsers.get(userId).size === 1) {
         console.log(`[Presence] User ${userId} (${socket.user?.username}) came ONLINE`);
         await broadcastStatusChange(userId, 'online');
     }
 
-    // Send initial status of others to this user
     const currentStatuses = {};
     for (const [ouId, sockets] of onlineUsers.entries()) {
         if (sockets.size > 0 && ouId !== userId) {
@@ -249,7 +242,6 @@ io.on('connection', async (socket) => {
 
             io.to(String(receiverId)).emit('receiveMessage', msgData);
 
-            // Also send back the ID to the sender for UI updates (ticks)
             socket.emit('messageAck', {
                 tempId: data.tempId,
                 id: res.rows[0].id,
@@ -262,7 +254,7 @@ io.on('connection', async (socket) => {
     });
 
     socket.on('markRead', async (data) => {
-        const { senderId } = data; // the one who SENT the messages we are marking as read
+        const { senderId } = data; 
         const myId = userId;
 
         try {
@@ -274,7 +266,6 @@ io.on('connection', async (socket) => {
                 [senderId, myId]
             );
 
-            // Only notify sender if BOTH have read receipts enabled
             if (myPrivacy.show_read_receipts && senderPrivacy.show_read_receipts) {
                 io.to(String(senderId)).emit('readReceipt', {
                     readBy: myId,
@@ -452,7 +443,6 @@ app.get('/api/chat/history/:partnerId', authenticateJWT, async (req, res) => {
         const myPrivacy = await getUserPrivacy(myId);
         const partnerPrivacy = await getUserPrivacy(partnerId);
 
-        // Standard privacy logic: If either user has receipts OFF, nobody sees blue ticks
         const showReceipts = myPrivacy.show_read_receipts && partnerPrivacy.show_read_receipts;
 
         const result = await pool.query(

@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'govcomm',
+                                'GovComm',
                                 style: TextStyle(
                                   fontSize: 44, 
                                   fontWeight: FontWeight.bold,

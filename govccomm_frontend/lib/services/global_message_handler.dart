@@ -79,8 +79,6 @@ class GlobalMessageHandler {
           await _sessionManager.signalService.identityStore.saveIdentity(
               SignalProtocolAddress(senderId, 1), null
           );
-
-          // Request the SENDER to also reset their session for US
           _socketService.requestSessionReset(senderId);
       }
 
@@ -94,10 +92,8 @@ class GlobalMessageHandler {
         counter: isDecrypted ? 0 : -1, 
       );
 
-      // Save as UNREAD because it's incoming
       await _dbService.saveMessage(msg, false, isRead: false, isDelivered: true); 
       
-      // Play sound
       try {
         await _audioPlayer.play(AssetSource('sounds/ding.mp3'));
       } catch (e) {

@@ -228,20 +228,17 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
 
 @override
   Widget build(BuildContext context) {
-    // Reusing the dark blue color
     final Color darkBlue = Colors.blue.shade900;
 
     return Scaffold(
       backgroundColor: Colors.white,
       
-      // --- EXPANDED BLUE TOP BAR ---
       appBar: AppBar(
         toolbarHeight: 80.0, 
         backgroundColor: darkBlue, 
         elevation: 0, 
         centerTitle: true, 
         
-        // Dropdown Menu on the far left
         leading: PopupMenuButton<String>(
           icon: const Icon(Icons.menu, color: Colors.white, size: 32),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -285,7 +282,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
           ],
         ),
         
-        // Centered Logo and App Name
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -300,7 +296,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             ),
             const SizedBox(width: 12),
             const Text(
-              'govcomm',
+              'GovComm',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32, 
@@ -309,7 +305,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            // Online status indicator
             Container(
               width: 12,
               height: 12,
@@ -325,8 +320,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // --- RECENT CHATS HEADER ---
-          // Top separation line
           const Divider(height: 1, thickness: 1, color: Colors.black12),
           
           Padding(
@@ -337,26 +330,23 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: Colors.grey.shade500,
-                letterSpacing: 1.5, // Keeps the avant-garde spacing aesthetic
+                letterSpacing: 1.5, 
               ),
             ),
           ),
           
-          // Bottom separation line
           const Divider(height: 1, thickness: 1, color: Colors.black12),
 
-          // --- CONVERSATIONS LIST SECTION ---
           Expanded(
             child: _conversations.isEmpty
                 ? const Center(child: Text("No active chats. Open menu to search."))
-                // Changed to ListView.separated to automatically add lines between chats
                 : ListView.separated(
                     itemCount: _conversations.length,
                     separatorBuilder: (context, index) => const Divider(
                       height: 1, 
                       thickness: 1, 
                       color: Colors.black12,
-                      indent: 72, // Optional: Indents the line so it aligns with the text, not the avatar. Remove if you want full-width lines.
+                      indent: 72, 
                     ),
                     itemBuilder: (context, index) {
                       final conv = _conversations[index];
@@ -399,7 +389,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                           }
                         },
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0), // Adds a bit of breathing room to the list item
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0), 
                           leading: Stack(
                             children: [
                               CircleAvatar(
